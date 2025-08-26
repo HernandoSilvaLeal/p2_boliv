@@ -1,0 +1,30 @@
+thresholds:
+  min_income: 1000000              # COP
+  max_amount_income_ratio: 0.30    # requested_amount / income_monthly
+  min_age: 21                      # años
+  min_experience_months: 12        # 1 año
+  max_active_credits: 2
+  max_rejections_12m: 2
+  allow_mora_last_6m: false
+  min_credit_rating: "Buena"       # Mala < Regular < Buena < Muy Buena < Excelente
+
+decision:
+  logic: "all"                     # todas deben pasar
+
+rules:
+  - id: income_min
+    desc: "Ingresos mensuales > $1.000.000 COP"
+  - id: no_delinquency_6m
+    desc: "Sin créditos en mora últimos 6 meses"
+  - id: age_min
+    desc: "Edad mínima 21 años"
+  - id: amount_ratio_ok
+    desc: "Monto solicitado ≤ 30% de ingresos"
+  - id: experience_min
+    desc: "Experiencia laboral/negocio ≥ 12 meses"
+  - id: active_credits_max
+    desc: "Máximo 2 créditos activos"
+  - id: credit_rating_min
+    desc: "Calificación crediticia Buena o superior"
+  - id: rejections_max
+    desc: "Máximo 2 rechazos en últimos 12 meses"
