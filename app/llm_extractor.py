@@ -64,36 +64,64 @@ def extract_with_llm(letter: str) -> ApplicationExtract:
 
 def extract_with_fallback(letter: str) -> ApplicationExtract:
     # Heuristic extraction using regex
+    normalized_letter = " ".join(letter.lower().split())
+    word_to_num = {"un": 1, "uno": 1, "dos": 2, "tres": 3, "cuatro": 4, "cinco": 5}
+
     def find_number(pattern, text):
         match = re.search(pattern, text, re.IGNORECASE)
-        return int(re.sub(r'\D', '', match.group(1))) if match else 0
+        if not match:
+            return 0
+        
+        # Try to convert word to number first
+        val = match.group(1)
+        if val in word_to_num:
+            return word_to_num[val]
+        
+        return int(re.sub(r'\D', '', val))
 
-    income = find_number(r"ingresos mensuales ascienden a \$([\d,.]+)", letter)
-    amount = find_number(r"solicitar un crédito personal por un (?:valor|monto) de \$([\d,.]+)", letter)
-    age = find_number(r"tengo (\d+) años", letter)
-    experience = find_number(r"experiencia laboral de (\d+) años", letter) * 12
-    active_credits = find_number(r"solo mantengo (\w+) crédito activo", letter)
-    if active_credits == 0: # Handle 'un' crédito
-        if re.search(r"un crédito activo", letter, re.IGNORECASE):
-            active_credits = 1
+    income = find_number(r"ingresos mensuales.*?([\d\.,]+)", normalized_letter)
+    amount = find_number(r"solicitar un crédito.*?([\d\.,]+)", normalized_letter)
+    age = find_number(r"tengo (\d{2})\s*a[nñ]os", normalized_letter)
 
-    rejections = find_number(r"solicitado crédito en (\w+) ocasiones", letter)
-    if rejections == 0: # Handle 'tres' ocasiones
-        if re.search(r"tres ocasiones", letter, re.IGNORECASE):
-            rejections = 3
-
-    mora = bool(re.search(r"crédito en mora", letter, re.IGNORECASE))
+    # Experience
+    experience_in_months = 0
+    exp_match = re.search(r"experiencia.*?(\d+|un|uno|dos|tres|cuatro|cinco)\s*a[ñn]o(s)?", normalized_letter)
+    if exp_match:
+        val = exp_match.group(1)
+        years = int(val) if val.isdigit() else word_to_num.get(val, 0)
+        experience_in_months = years * 12
     
-    rating_match = re.search(r'calificación de "(.*?)"', letter, re.IGNORECASE)
-    rating = rating_match.group(1) if rating_match else "Regular"
+    if experience_in_months == 0:
+        months_match = re.search(r"(\d+)\s*mes(es)? de experiencia", normalized_letter)
+        if months_match:
+            experience_in_months = int(months_match.group(1))
 
+
+    # Active Credits
+    active_credits = find_number(r"mantengo (\w+) crédito activo", normalized_letter)
+
+    # Rejections
+    rejections = find_number(r"crédito en (\w+) ocasiones", normalized_letter)
+
+    # Delinquencies
+    has_delinquencies_last_6m = False
+    if "mora" in normalized_letter:
+        if not re.search(r"(sin|no).{0,20}mora", normalized_letter):
+            has_delinquencies_last_6m = True
+
+    # Rating
+    rating_match = re.search(r'calificación de "(.*?)"', letter, re.IGNORECASE)
+    rating = rating_match.group(1).capitalize() if rating_match else "Regular"
+
+    # Full Name
     full_name_match = re.search(r"Mi nombre es (.*?)[,.]", letter)
     full_name = full_name_match.group(1) if full_name_match else "Unknown"
 
     return ApplicationExtract(
         applicant=Applicant(full_name=full_name, age_years=age),
-        employment=Employment(employment_tenure_months=experience),
+        employment=Employment(employment_tenure_months=experience_in_months),
         financials=Financials(income_monthly=income, requested_amount=amount, active_credits=active_credits),
-        credit=CreditProfile(has_delinquencies_last_6m=mora, credit_rating=rating, rejections_last_12m=rejections),
+        credit=CreditProfile(has_delinquencies_last_6m=has_delinquencies_last_6m, credit_rating=rating, rejections_last_12m=rejections),
         raw_letter=letter
     )
+
