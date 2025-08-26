@@ -85,12 +85,12 @@ def extract_with_fallback(letter: str) -> ApplicationExtract:
         return 0
 
     income = find_number(r"ingresos mensuales.*?([\d\.,]+)", normalized_letter, is_money=True)
-    amount = find_number(r"solicitar un crédito.*?([\d\.,]+)", normalized_letter, is_money=True)
+    amount = find_number(r"(?:valor|monto) de \$?([\d\.,]+)", normalized_letter, is_money=True)
     age = find_number(r"tengo (\d{2})\s*a[nñ]os", normalized_letter)
 
     # Experience
     experience_in_months = 0
-    exp_match = re.search(r"experiencia.*?(\d+|un|uno|dos|tres|cuatro|cinco)\s*a[ñn]o(s)?", normalized_letter)
+    exp_match = re.search(r"experiencia laboral de (\d+|un|uno|dos|tres|cuatro|cinco)\s*a[ñn]o(s)?", normalized_letter)
     if exp_match:
         val = exp_match.group(1)
         years = int(val) if val.isdigit() else word_to_num.get(val, 0)
@@ -100,24 +100,26 @@ def extract_with_fallback(letter: str) -> ApplicationExtract:
         months_match = re.search(r"(\d+)\s*mes(es)? de experiencia", normalized_letter)
         if months_match:
             experience_in_months = int(months_match.group(1))
-        elif "menos de un año" in normalized_letter:
+        elif "menos de un año" in normalized_letter or "<12 meses" in normalized_letter:
             experience_in_months = 6 # less than a year
 
 
     # Active Credits
-    active_credits = find_number(r"mantengo (\w+) crédito activo", normalized_letter)
+    active_credits = find_number(r"(\w+) créditos activos", normalized_letter)
 
     # Rejections
     rejections = find_number(r"crédito en (\w+) ocasiones", normalized_letter)
+    if re.search(r"no he recibido ning.n rechazo", normalized_letter):
+        rejections = 0
 
     # Delinquencies
     has_delinquencies_last_6m = False
     if "mora" in normalized_letter:
-        if not re.search(r"(sin|no).{0,20}mora", normalized_letter):
+        if not re.search(r"(sin|no).{0,40}mora", normalized_letter):
             has_delinquencies_last_6m = True
 
     # Rating
-    rating_match = re.search(r'calificación.*?"(.*?)"', letter, re.IGNORECASE | re.DOTALL)
+    rating_match = re.search(r'calificación de \"(.*?)\"', letter, re.IGNORECASE | re.DOTALL)
     rating = rating_match.group(1).capitalize() if rating_match else "Regular"
 
     # Full Name
