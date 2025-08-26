@@ -3,7 +3,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
-# --- Modelos de Datos Pydantic ---
+# --- Modelos de Datos Pydantic V1 ---
 # Estos modelos definen la estructura de los datos con los que trabaja la aplicación.
 # Sirven para validación automática, serialización (convertir a JSON) y documentación.
 # `Optional[str] = None` significa que el campo es opcional y su valor por defecto es None.
@@ -67,3 +67,40 @@ class Decision(BaseModel):
     rationale: List[str] # Una lista con las razones del rechazo (si aplica).
     risk_score: float # La puntuación de riesgo calculada (0.0 a 1.0).
     extracted: ApplicationExtract # El objeto completo con los datos extraídos.
+
+# --- Modelos de Datos Pydantic V2 ---
+
+# Para /batch_decision
+class BatchItem(BaseModel):
+    """Modela un único item en una solicitud de lote."""
+    id: str
+    letter: str
+
+class BatchRequest(BaseModel):
+    """Modela el cuerpo de la solicitud para el endpoint /batch_decision."""
+    items: List[BatchItem]
+    rules_path: str = "business_rules.yaml"
+
+class BatchRow(BaseModel):
+    """Modela una fila en la respuesta del endpoint /batch_decision."""
+    id: str
+    approved: bool
+    risk_score: float
+    failed_rules: List[str]
+    extracted: ApplicationExtract
+
+class BatchResponse(BaseModel):
+    """Modela la respuesta completa del endpoint /batch_decision."""
+    rows: List[BatchRow]
+
+# Para /explain
+class ExplainRequest(BaseModel):
+    """Modela el cuerpo de la solicitud para el endpoint /explain."""
+    letter: str
+    rules_path: str = "business_rules.yaml"
+    provider: Optional[str] = None
+
+class ExplainResponse(BaseModel):
+    """Modela la respuesta del endpoint /explain."""
+    decision: Decision
+    explanation: str

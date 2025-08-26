@@ -1,18 +1,21 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 # Importaciones necesarias.
 import os
+from dotenv import load_dotenv
+
 import re
 import json
-from dotenv import load_dotenv
+
 import google.generativeai as genai
 import openai
+
 from app.schema import ApplicationExtract, Applicant, Employment, Financials, CreditProfile
 
 # Carga las variables de entorno desde un archivo .env (si existe).
 # Aquí es donde buscará las claves de API.
 load_dotenv()
 
-# --- Función Principal de Extracción ---
+# --- Funcin Principal de Extraccin ---
 
 def extract_with_llm(letter: str) -> ApplicationExtract:
     """Intenta extraer datos usando un LLM (Google o OpenAI) y si falla, usa un fallback de regex."""
@@ -35,15 +38,15 @@ def extract_with_llm(letter: str) -> ApplicationExtract:
             {letter}
             """
             response = model.generate_content(prompt)
-            # Limpia la respuesta del LLM para asegurar que sea un JSON válido.
+            # Limpia la respuesta del LLM para asegurar que sea un JSON vlido.
             cleaned_response = response.text.strip().replace('`', '').replace('json', '')
             extracted_data = json.loads(cleaned_response)
-            extracted_data['raw_letter'] = letter # Añade la carta original a los datos.
+            extracted_data['raw_letter'] = letter # Aade la carta original a los datos.
             # Valida y estructura los datos usando el modelo Pydantic.
             return ApplicationExtract(**extracted_data)
         except Exception as e:
             print(f"Error with Gemini: {e}")
-            # Si algo falla, se llama al método de fallback.
+            # Si algo falla, se llama al mtodo de fallback.
             return extract_with_fallback(letter)
 
     # Prioridad 2: Si no hay clave de Google, intentar con OpenAI.
@@ -51,7 +54,7 @@ def extract_with_llm(letter: str) -> ApplicationExtract:
         try:
             client = openai.OpenAI(api_key=openai_api_key)
             model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-            # El prompt es similar, pidiendo una extracción estructurada.
+            # El prompt es similar, pidiendo una extraccin estructurada.
             prompt = f"""Extract the following information from the letter below and provide the output in a valid JSON format. 
             The JSON object should conform to the following structure:
             {{'applicant': {{'full_name': 'str', 'age_years': 'int'}}, 'employment': {{'employment_tenure_months': 'int'}}, 'financials': {{'income_monthly': 'int', 'requested_amount': 'int', 'active_credits': 'int'}}, 'credit': {{'has_delinquencies_last_6m': 'bool', 'credit_rating': 'str', 'rejections_last_12m': 'int'}}, 'raw_letter': 'str'}}
@@ -71,29 +74,29 @@ def extract_with_llm(letter: str) -> ApplicationExtract:
             print(f"Error with OpenAI: {e}")
             return extract_with_fallback(letter)
     
-    # Opción final: Si no hay ninguna clave de API, usar directamente el fallback.
+    # Opcin final: Si no hay ninguna clave de API, usar directamente el fallback.
     else:
         return extract_with_fallback(letter)
 
-# --- Fallback: Extracción Heurística con Regex ---
+# --- Fallback: Extraccin Heurstica con Regex ---
 
 def extract_with_fallback(letter: str) -> ApplicationExtract:
     """Extrae datos de la carta usando expresiones regulares (regex).
     
-    Este es el motor de extracción offline. Es menos flexible que un LLM pero es determinista y gratuito.
+    Este es el motor de extraccin offline. Es menos flexible que un LLM pero es determinista y gratuito.
     """
-    # Normaliza la carta a minúsculas y quita espacios extra para facilitar la búsqueda de patrones.
+    # Normaliza la carta a minsculas y quita espacios extra para facilitar la bsqueda de patrones.
     normalized_letter = " ".join(letter.lower().split())
-    # Diccionario para convertir números escritos con letra a dígitos.
+    # Diccionario para convertir nmeros escritos con letra a dgitos.
     word_to_num = {"un": 1, "uno": 1, "dos": 2, "tres": 3, "cuatro": 4, "cinco": 5}
 
-    # Función auxiliar para buscar y limpiar números.
+    # Funcin auxiliar para buscar y limpiar nmeros.
     def find_number(pattern, text, is_money=False):
-        match = re.search(pattern, text, re.IGNORECASE) # Busca el patrón sin importar mayúsculas/minúsculas.
+        match = re.search(pattern, text, re.IGNORECASE) # Busca el patrn sin importar maysculas/minsculas.
         if not match:
             return 0
         
-        val = match.group(1) # Obtiene el valor capturado por el paréntesis en el regex.
+        val = match.group(1) # Obtiene el valor capturado por el parntesis en el regex.
         if is_money:
             # Si es dinero, elimina puntos y comas (ej. "1.800.000" -> "1800000").
             return int(re.sub(r'[^\d]', '', val))
@@ -106,43 +109,45 @@ def extract_with_fallback(letter: str) -> ApplicationExtract:
         
         return 0
 
-    # Aplicación de los patrones de regex para cada campo.
+    # Aplicacin de los patrones de regex para cada campo.
     income = find_number(r"ingresos mensuales.*?([\d\.,]+)", normalized_letter, is_money=True)
     amount = find_number(r"(?:valor|monto) de \$?([\d\.,]+)", normalized_letter, is_money=True)
     age = find_number(r"tengo (\d{2})\s*a[nñ]os", normalized_letter)
 
-    # Lógica para experiencia (más compleja).
+    # Lgica para experiencia (ms compleja).
     experience_in_months = 0
-    # Intenta encontrar "experiencia laboral de 5 años".
+    # Intenta encontrar "experiencia laboral de 5 aos".
     exp_match = re.search(r"experiencia laboral de (\d+|un|uno|dos|tres|cuatro|cinco)\s*a[ñn]o(s)?", normalized_letter)
     if exp_match:
         val = exp_match.group(1)
         years = int(val) if val.isdigit() else word_to_num.get(val, 0)
         experience_in_months = years * 12
     
-    # Si no encontró años, busca meses o frases como "menos de un año".
+    # Si no encontr aos, busca meses o frases como "menos de un ao".
     if experience_in_months == 0:
         months_match = re.search(r"(\d+)\s*mes(es)? de experiencia", normalized_letter)
         if months_match:
             experience_in_months = int(months_match.group(1))
-        elif "menos de un año" in normalized_letter or "<12 meses" in normalized_letter:
+        elif "menos de un ao" in normalized_letter or "<12 meses" in normalized_letter:
             experience_in_months = 6 # Asigna un valor por defecto (6 meses).
 
-    active_credits = find_number(r"(\w+) créditos activos", normalized_letter)
-    rejections = find_number(r"crédito en (\w+) ocasiones", normalized_letter)
-    # Caso especial para "ningún rechazo".
+    # Regex corregido para crditos activos.
+    active_credits = find_number(r"mantengo\s+(\w+)\s+crdito(s)?\s+activo(s)?", normalized_letter)
+    
+    rejections = find_number(r"crdito en (\w+) ocasiones", normalized_letter)
+    # Caso especial para "ningn rechazo".
     if re.search(r"no he recibido ning.n rechazo", normalized_letter):
         rejections = 0
 
-    # Lógica de negación para la mora.
+    # Lgica de negacin para la mora.
     has_delinquencies_last_6m = False
     if "mora" in normalized_letter:
-        # Solo es True si "mora" existe Y NO hay una negación ("sin" o "no") cerca.
+        # Solo es True si "mora" existe Y NO hay una negacin ("sin" o "no") cerca.
         if not re.search(r"(sin|no).{0,40}mora", normalized_letter):
             has_delinquencies_last_6m = True
 
-    # Extrae el rating, capitalizando el resultado (ej. "buena" -> "Buena").
-    rating_match = re.search(r'calificación de \"(.*?)\"', letter, re.IGNORECASE | re.DOTALL)
+    # Regex corregido para el rating.
+    rating_match = re.search(r'calificacin.*?"(.*?)"', letter, re.IGNORECASE | re.DOTALL)
     rating = rating_match.group(1).capitalize() if rating_match else "Regular"
 
     # Extrae el nombre completo.

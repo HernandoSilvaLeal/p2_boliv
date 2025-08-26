@@ -1,0 +1,13 @@
+id,approved,risk_score,failed_rules,income,requested_amount,amount_income_ratio,age_years,active_credits,rating,rejections_12m,has_mora,tenure_months
+aprobado.txt,False,0.125,Calificación crediticia Buena o superior,1800000,400000,0.2222222222222222,32,0,Regular,0,False,60
+Carta1.txt,False,0.625,"Ingresos mensuales > $1.000.000 COP, Edad mínima 21 años, Monto solicitado ≤ 30% de ingresos, Experiencia laboral/negocio ≥ 12 meses, Calificación crediticia Buena o superior",0,0,inf,0,0,Regular,0,False,0
+Carta2.txt,False,0.5,"Edad mínima 21 años, Monto solicitado ≤ 30% de ingresos, Experiencia laboral/negocio ≥ 12 meses, Calificación crediticia Buena o superior",6540000,48320000,7.388379204892966,0,0,Regular,0,False,0
+Carta3.txt,False,0.375,"Edad mínima 21 años, Experiencia laboral/negocio ≥ 12 meses, Calificación crediticia Buena o superior",8000000,2400000,0.3,0,0,Regular,0,False,0
+Carta4.txt,False,0.375,"Edad mínima 21 años, Experiencia laboral/negocio ≥ 12 meses, Calificación crediticia Buena o superior",10500000,3000000,0.2857142857142857,0,0,Regular,0,False,0
+Carta5.txt,False,0.375,"Edad mínima 21 años, Experiencia laboral/negocio ≥ 12 meses, Calificación crediticia Buena o superior",6200000,1800000,0.2903225806451613,0,0,Regular,0,False,0
+Carta6.txt,False,0.375,"Edad mínima 21 años, Experiencia laboral/negocio ≥ 12 meses, Calificación crediticia Buena o superior",14500000,4200000,0.2896551724137931,0,0,Regular,0,False,0
+Carta7.txt,False,0.375,"Edad mínima 21 años, Experiencia laboral/negocio ≥ 12 meses, Calificación crediticia Buena o superior",9000000,2700000,0.3,0,0,Regular,0,False,0
+Carta8.txt,False,0.375,"Edad mínima 21 años, Experiencia laboral/negocio ≥ 12 meses, Calificación crediticia Buena o superior",20000000,6000000,0.3,0,0,Regular,0,False,0
+Carta9.txt,False,0.375,"Edad mínima 21 años, Experiencia laboral/negocio ≥ 12 meses, Calificación crediticia Buena o superior",7200000,2100000,0.2916666666666667,0,0,Regular,0,False,0
+rechazado.txt,False,0.625,"Ingresos mensuales > $1.000.000 COP, Sin créditos en mora últimos 6 meses, Monto solicitado ≤ 30% de ingresos, Experiencia laboral/negocio ≥ 12 meses, Calificación crediticia Buena o superior",900000,500000,0.5555555555555556,25,0,Regular,0,True,0
+sample_letter.txt,False,0.125,Calificación crediticia Buena o superior,1800000,400000,0.2222222222222222,32,0,Regular,0,False,60
