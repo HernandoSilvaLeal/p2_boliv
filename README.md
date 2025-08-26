@@ -1,76 +1,118 @@
-# Credit Decision MVP V1
+# 📊 Procesador de Solicitudes de Crédito — MVP V1
 
-This project is a Minimum Viable Product (MVP) for a credit decision engine that uses a Large Language Model (LLM) to extract information from a free-text letter and applies a set of business rules to make a decision.
+Este proyecto implementa un **MVP funcional** para la aprobación o rechazo de solicitudes de crédito a partir de **cartas en texto libre**, aplicando **reglas de negocio parametrizadas** en YAML y soportado por **IA generativa (LLM)** con fallback heurístico.
 
-## Architecture
+---
 
-```mermaid
-flowchart TD
-  A[Entrada: Carta .txt / POST /decision] --> B[Extractor LLM]
-  B -->|JSON| C[Pydantic Schema (validación)]
-  B -. falla o sin red .-> H[Fallback Heurístico (regex)] --> C
-  C --> D[Motor de Reglas (YAML thresholds)]
-  D --> E{Lógica de decisión}
-  E -->|Aprobado/Rechazado| F[Decision JSON + Rationale + Risk]
-  C --> G[Logs (INFO/ERROR, masking)]
-  subgraph Config
-    I(.env: API keys, modelo)
-    J(business_rules.yaml)
-  end
-  I -.-&gt; B
-  J -.-&gt; D
-  subgraph Interfaces
-    K[CLI]
-    L[FastAPI /extract, /decision]
-  end
-  A --> K
-  A --> L
-  L --> B
-```
+## 🚀 Arquitectura del Sistema
 
-## How to Run
+El flujo es el siguiente:
 
-### 1. Installation
+**Carta (input)** → **Extractor (LLM o Fallback Regex)** → **Validación (Pydantic)** → **Motor de Reglas (YAML)** → **Decisión (JSON con Aprobado/Rechazado + Rationale + Riesgo)**
 
-Create a virtual environment and install the dependencies:
+![Diagrama de Arquitectura](https://res.cloudinary.com/dqvny6ewr/image/upload/v1756244914/boliv_nqubsj.png)
 
-```bash
-python -m venv .venv
-source .venv/bin/activate  # On Windows use `.venv\Scripts\activate`
+---
+
+## 📂 Estructura del Proyecto
+
+/
+├─ app/
+│  ├─ main.py          → CLI + API FastAPI
+│  ├─ schema.py        → Modelos Pydantic
+│  ├─ llm_extractor.py → Extracción con LLM y Fallback
+│  └─ rules.py         → Motor de reglas YAML
+├─ examples/
+│  ├─ aprobado.txt
+│  ├─ rechazado.txt
+│  ├─ Carta1.txt … Carta9.txt
+│  └─ sample_letter.txt
+├─ business_rules.yaml → Reglas de negocio parametrizadas
+├─ requirements.txt
+├─ .env.example
+└─ README.md
+
+---
+
+## ⚙️ Instalación
+
+1. Crear y activar entorno virtual:
+`bash
+python -m venv venv
+source venv/bin/activate  # En Windows: venv\Scripts\activate
+`
+
+2. Instalar dependencias:
+`bash
 pip install -r requirements.txt
-```
+`
 
-### 2. Configuration
+3. Configurar variables de entorno:
+- Copiar `.env.example` a `.env`
+- Definir una sola clave activa:
+  - `GOOGLE_API_KEY` y `GOOGLE_MODEL=gemini-1.5-flash`
+  - o `OPENAI_API_KEY` y `OPENAI_MODEL=gpt-4o-mini`
 
-Create a `.env` file from the `.env.example` and add your API key for either Google Gemini or OpenAI.
+---
 
-```bash
-cp .env.example .env
-```
+## 🖥️ Uso por CLI
 
-### 3. Run the CLI
+Ejecutar:
+`bash
+python -m app.main --letter examples/aprobado.txt --rules business_rules.yaml
+python -m app.main --letter examples/rechazado.txt --rules business_rules.yaml
+`
 
-To process a letter and get a decision, use the following command:
+Salida esperada:
+- **EXTRACCIÓN** (JSON de la carta)
+- **REGLAS** (lista con ✅/❌ + razón)
+- **DECISIÓN** (Aprobado/Rechazado + Riesgo)
 
-```bash
-python -m app.main --letter examples/sample_letter.txt --rules business_rules.yaml
-```
+---
 
-### 4. Run the API
+## 🌐 Uso por API (Swagger UI)
 
-To start the FastAPI server, run:
-
-```bash
+1. Levantar servidor:
+`bash
 uvicorn app.main:api --reload
-```
+`
 
-The API documentation will be available at `http://127.0.0.1:8000/docs`.
+2. Abrir en navegador:
+http://127.0.0.1:8000/docs
 
-## Editing Business Rules
+3. Probar endpoints:
+- **POST /extract** → Devuelve JSON estructurado
+- **POST /decision** → Devuelve decisión (aprobado/rechazado)
 
-The business rules are defined in the `business_rules.yaml` file. You can modify the thresholds and the decision logic in this file.
+Ejemplo payload:
+`json
+{
+  "letter": "Pega aquí el contenido de la carta",
+  "rules_path": "business_rules.yaml"
+}
+`
 
-## Resilience and Security
+---
 
-- **Resilience**: If the LLM API fails or is not available, the system will fallback to a heuristic-based extraction using regular expressions.
-- **Security**: The API keys are loaded from the `.env` file, which is included in the `.gitignore` to prevent it from being committed to the repository.
+## 📜 Reglas de Negocio (business_rules.yaml)
+
+1. Ingreso mensual > $1.000.000 COP  
+2. Sin mora en últimos 6 meses  
+3. Edad ≥ 21 años  
+4. Monto solicitado ≤ 30% de ingresos  
+5. Experiencia ≥ 12 meses  
+6. Créditos activos ≤ 2  
+7. Calificación ≥ “Buena” (Mala < Regular < Buena < Muy Buena < Excelente)  
+8. Rechazos últimos 12 meses ≤ 2  
+
+Decisión: aprobar solo si **todas** las reglas se cumplen (`logic="all"`).
+
+---
+
+## ✅ Estado del Proyecto
+
+- CLI validado con ejemplos **aprobado** y **rechazado**.  
+- API Swagger (`/docs`) funcional.  
+- Fallback heurístico robusto (años→meses, números en palabras, mora con negación).  
+- Reglas parametrizadas en YAML.  
+- Listo para demo y explicación técnica.
