@@ -6,6 +6,7 @@ thresholds:
   max_active_credits: 2
   max_rejections_12m: 2
   allow_mora_last_6m: false
+  allow_bussines: true
   min_credit_rating: "Buena"       # Mala < Regular < Buena < Muy Buena < Excelente
 
 decision:
@@ -20,11 +21,13 @@ rules:
     desc: "Edad mínima 21 años"
   - id: amount_ratio_ok
     desc: "Monto solicitado ≤ 30% de ingresos"
-  - id: experience_min
-    desc: "Experiencia laboral/negocio ≥ 12 meses"
+  - id: experience_or_entrepreneur_ok
+    desc: "Antigüedad ≥ 12 meses **o** evidencia de emprendimiento/negocio propio (independiente, emprendedor, propietario)"
   - id: active_credits_max
     desc: "Máximo 2 créditos activos"
   - id: credit_rating_min
     desc: "Calificación crediticia Buena o superior"
   - id: rejections_max
     desc: "Máximo 2 rechazos en últimos 12 meses"
+  - id: allow_bussines
+    desc: "Que tenga negocio propio"

@@ -32,7 +32,7 @@ def extract_with_llm(letter: str) -> ApplicationExtract:
             # El prompt le da al LLM el contexto y la estructura JSON deseada.
             prompt = f"""Extract the following information from the letter below and provide the output in a valid JSON format. 
             The JSON object should conform to the following structure:
-            {{'applicant': {{'full_name': 'str', 'age_years': 'int'}}, 'employment': {{'employment_tenure_months': 'int'}}, 'financials': {{'income_monthly': 'int', 'requested_amount': 'int', 'active_credits': 'int'}}, 'credit': {{'has_delinquencies_last_6m': 'bool', 'credit_rating': 'str', 'rejections_last_12m': 'int'}}, 'raw_letter': 'str'}}
+            {{'applicant': {{'full_name': 'str', 'age_years': 'int'}}, 'employment': {{'employment_tenure_months': 'int', 'employment_type': 'str (e.g., "dependiente", "independiente", "emprendedor", "autónomo", "contratista", "freelance")'}}, 'financials': {{'income_monthly': 'int', 'requested_amount': 'int', 'active_credits': 'int'}}, 'credit': {{'has_delinquencies_last_6m': 'bool', 'credit_rating': 'str', 'rejections_last_12m': 'int'}}, 'raw_letter': 'str'}}
             
             Letter:
             {letter}
@@ -57,7 +57,7 @@ def extract_with_llm(letter: str) -> ApplicationExtract:
             # El prompt es similar, pidiendo una extraccin estructurada.
             prompt = f"""Extract the following information from the letter below and provide the output in a valid JSON format. 
             The JSON object should conform to the following structure:
-            {{'applicant': {{'full_name': 'str', 'age_years': 'int'}}, 'employment': {{'employment_tenure_months': 'int'}}, 'financials': {{'income_monthly': 'int', 'requested_amount': 'int', 'active_credits': 'int'}}, 'credit': {{'has_delinquencies_last_6m': 'bool', 'credit_rating': 'str', 'rejections_last_12m': 'int'}}, 'raw_letter': 'str'}}
+            {{'applicant': {{'full_name': 'str', 'age_years': 'int'}}, 'employment': {{'employment_tenure_months': 'int', 'employment_type': 'str (e.g., "dependiente", "independiente", "emprendedor", "autónomo", "contratista", "freelance")'}}, 'financials': {{'income_monthly': 'int', 'requested_amount': 'int', 'active_credits': 'int'}}, 'credit': {{'has_delinquencies_last_6m': 'bool', 'credit_rating': 'str', 'rejections_last_12m': 'int'}}, 'raw_letter': 'str'}}
             
             Letter:
             {letter}

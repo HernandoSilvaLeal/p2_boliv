@@ -66,7 +66,7 @@ def evaluate(ex: ApplicationExtract, cfg: dict) -> Decision:
             value = f"{ex.applicant.age_years} >= {thresholds['min_age']}"
             reason = rule['desc']
 
-        elif rule['id'] == 'amount_ratio_ok':
+        elif rule['id'] == 'amount_ratio_ok': 
             # Calcula el ratio entre el monto solicitado y el ingreso mensual.
             # Se protege contra una división por cero si el ingreso es 0.
             ratio = ex.financials.requested_amount / ex.financials.income_monthly if ex.financials.income_monthly > 0 else float('inf')
@@ -74,10 +74,35 @@ def evaluate(ex: ApplicationExtract, cfg: dict) -> Decision:
             value = f"{ratio:.2f} <= {thresholds['max_amount_income_ratio']}" # Formatea el ratio a 2 decimales.
             reason = rule['desc']
 
-        elif rule['id'] == 'experience_min':
-            passed = ex.employment.employment_tenure_months >= thresholds['min_experience_months']
-            value = f"{ex.employment.employment_tenure_months} >= {thresholds['min_experience_months']}"
-            reason = rule['desc']
+        elif rule['id'] == 'experience_or_entrepreneur_ok':
+            # --- Nueva regla OR: antigüedad >= umbral  O  emprendimiento propio ---
+            text = (ex.raw_letter or "").lower()
+
+            # Heurística para emprendimiento: tipo de empleo o palabras clave en la carta
+            kw = ["emprendimiento propio", "negocio propio", "emprendedor", "independiente",
+                  "autónomo", "propietario", "dueño", "freelance"]
+            is_entrepreneur = False
+            etype = (ex.employment.employment_type or "").strip().lower()
+
+            if etype in ["independiente", "autónomo", "contratista", "freelance", "emprendedor"]:
+                is_entrepreneur = True
+            elif any(k in text for k in kw):
+                is_entrepreneur = True
+
+            exp_ok = ex.employment.employment_tenure_months >= thresholds["min_experience_months"]
+            or_ok = exp_ok or is_entrepreneur
+
+            rule_results.append(RuleResult(
+                id="experience_or_entrepreneur_ok",
+                passed=or_ok,
+                reason=(
+                    f"Antigüedad={ex.employment.employment_tenure_months}m >= {thresholds['min_experience_months']}m"
+                    if exp_ok else
+                    ("Evidencia de emprendimiento/negocio propio" if is_entrepreneur else
+                     "No cumple antigüedad mínima ni se evidencia emprendimiento")
+                ),
+                value=ex.employment.employment_tenure_months
+            )) 
 
         elif rule['id'] == 'active_credits_max':
             passed = ex.financials.active_credits <= thresholds['max_active_credits']
