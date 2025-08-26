@@ -67,20 +67,25 @@ def extract_with_fallback(letter: str) -> ApplicationExtract:
     normalized_letter = " ".join(letter.lower().split())
     word_to_num = {"un": 1, "uno": 1, "dos": 2, "tres": 3, "cuatro": 4, "cinco": 5}
 
-    def find_number(pattern, text):
+    def find_number(pattern, text, is_money=False):
         match = re.search(pattern, text, re.IGNORECASE)
         if not match:
             return 0
         
-        # Try to convert word to number first
         val = match.group(1)
+        if is_money:
+            return int(re.sub(r'[^\d]', '', val))
+
         if val in word_to_num:
             return word_to_num[val]
         
-        return int(re.sub(r'\D', '', val))
+        if val.isdigit():
+            return int(val)
+        
+        return 0
 
-    income = find_number(r"ingresos mensuales.*?([\d\.,]+)", normalized_letter)
-    amount = find_number(r"solicitar un crédito.*?([\d\.,]+)", normalized_letter)
+    income = find_number(r"ingresos mensuales.*?([\d\.,]+)", normalized_letter, is_money=True)
+    amount = find_number(r"solicitar un crédito.*?([\d\.,]+)", normalized_letter, is_money=True)
     age = find_number(r"tengo (\d{2})\s*a[nñ]os", normalized_letter)
 
     # Experience
@@ -95,6 +100,8 @@ def extract_with_fallback(letter: str) -> ApplicationExtract:
         months_match = re.search(r"(\d+)\s*mes(es)? de experiencia", normalized_letter)
         if months_match:
             experience_in_months = int(months_match.group(1))
+        elif "menos de un año" in normalized_letter:
+            experience_in_months = 6 # less than a year
 
 
     # Active Credits
@@ -110,7 +117,7 @@ def extract_with_fallback(letter: str) -> ApplicationExtract:
             has_delinquencies_last_6m = True
 
     # Rating
-    rating_match = re.search(r'calificación de "(.*?)"', letter, re.IGNORECASE)
+    rating_match = re.search(r'calificación.*?"(.*?)"', letter, re.IGNORECASE | re.DOTALL)
     rating = rating_match.group(1).capitalize() if rating_match else "Regular"
 
     # Full Name
@@ -124,4 +131,3 @@ def extract_with_fallback(letter: str) -> ApplicationExtract:
         credit=CreditProfile(has_delinquencies_last_6m=has_delinquencies_last_6m, credit_rating=rating, rejections_last_12m=rejections),
         raw_letter=letter
     )
-

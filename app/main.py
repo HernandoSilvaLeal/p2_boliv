@@ -44,7 +44,7 @@ def main():
     parser.add_argument("--rules", default="business_rules.yaml", help="Path to the business rules YAML file")
     args = parser.parse_args()
 
-    with open(args.letter, 'r') as f:
+    with open(args.letter, 'r', encoding='utf-8') as f:
         letter = f.read()
 
     extracted_data = extract_with_llm(letter)
@@ -55,7 +55,7 @@ def main():
     print(json.dumps(decision.extracted.dict(), indent=2))
     print("\n--- REGLAS ---")
     for result in decision.rule_results:
-        status = "✅" if result.passed else "❌"
+        status = "[APROBADO]" if result.passed else "[RECHAZADO]"
         print(f"{status} {result.reason}: {result.value}")
     print("\n--- DECISIÓN ---")
     print(f"APROBADO: {decision.approved}")
