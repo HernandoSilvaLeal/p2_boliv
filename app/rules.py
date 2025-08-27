@@ -123,8 +123,7 @@ def evaluate(ex: ApplicationExtract, cfg: dict) -> Decision:
             value = f"{ex.credit.rejections_last_12m} <= {thresholds['max_rejections_12m']}"
             reason = rule['desc']
 
-        # Añade el resultado de esta regla a la lista de resultados.
-        rule_results.append(RuleResult(id=rule['id'], passed=passed, reason=reason, value=value))
+        
 
     # --- Decisión Final y Puntuación de Riesgo ---
 
