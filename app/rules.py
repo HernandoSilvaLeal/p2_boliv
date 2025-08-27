@@ -92,17 +92,14 @@ def evaluate(ex: ApplicationExtract, cfg: dict) -> Decision:
             exp_ok = ex.employment.employment_tenure_months >= thresholds["min_experience_months"]
             or_ok = exp_ok or is_entrepreneur
 
-            rule_results.append(RuleResult(
-                id="experience_or_entrepreneur_ok",
-                passed=or_ok,
-                reason=(
-                    f"Antigüedad={ex.employment.employment_tenure_months}m >= {thresholds['min_experience_months']}m"
-                    if exp_ok else
-                    ("Evidencia de emprendimiento/negocio propio" if is_entrepreneur else
-                     "No cumple antigüedad mínima ni se evidencia emprendimiento")
-                ),
-                value=str(ex.employment.employment_tenure_months)
-            )) 
+            passed = or_ok
+            reason = (
+                f"Antigüedad={ex.employment.employment_tenure_months}m >= {thresholds['min_experience_months']}m"
+                if exp_ok else
+                ("Evidencia de emprendimiento/negocio propio" if is_entrepreneur else
+                 "No cumple antigüedad mínima ni se evidencia emprendimiento")
+            )
+            value = str(ex.employment.employment_tenure_months) 
 
         elif rule['id'] == 'active_credits_max':
             passed = ex.financials.active_credits <= thresholds['max_active_credits']
