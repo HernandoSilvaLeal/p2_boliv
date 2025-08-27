@@ -29,5 +29,3 @@ rules:
     desc: "Calificación crediticia Buena o superior"
   - id: rejections_max
     desc: "Máximo 2 rechazos en últimos 12 meses"
-  - id: allow_bussines
-    desc: "Que tenga negocio propio"
