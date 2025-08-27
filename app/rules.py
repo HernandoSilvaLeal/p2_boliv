@@ -101,7 +101,7 @@ def evaluate(ex: ApplicationExtract, cfg: dict) -> Decision:
                     ("Evidencia de emprendimiento/negocio propio" if is_entrepreneur else
                      "No cumple antigüedad mínima ni se evidencia emprendimiento")
                 ),
-                value=ex.employment.employment_tenure_months
+                value=str(ex.employment.employment_tenure_months)
             )) 
 
         elif rule['id'] == 'active_credits_max':
