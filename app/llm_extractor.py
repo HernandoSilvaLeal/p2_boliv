@@ -154,42 +154,10 @@ def extract_with_fallback(letter: str) -> ApplicationExtract:
     full_name_match = re.search(r"Mi nombre es (.*?)[,.]", letter)
     full_name = full_name_match.group(1) if full_name_match else "Unknown"
 
-    # Heurística para emprendimiento: tipo de empleo o palabras clave en la carta
-    kw = ["emprendimiento propio", "negocio propio", "emprendedor", "independiente",
-          "autónomo", "propietario", "dueño", "freelance"]
-    is_entrepreneur = False
-    employment_type_extracted = None # Initialize to None
-
-    # Try to extract employment_type from the letter
-    # This is a simplified heuristic for fallback, LLM would be better
-    if "independiente" in normalized_letter:
-        employment_type_extracted = "independiente"
-        is_entrepreneur = True
-    elif "autónomo" in normalized_letter:
-        employment_type_extracted = "autónomo"
-        is_entrepreneur = True
-    elif "contratista" in normalized_letter:
-        employment_type_extracted = "contratista"
-        is_entrepreneur = True
-    elif "freelance" in normalized_letter:
-        employment_type_extracted = "freelance"
-        is_entrepreneur = True
-    elif "emprendedor" in normalized_letter:
-        employment_type_extracted = "emprendedor"
-        is_entrepreneur = True
-    elif any(k in normalized_letter for k in kw):
-        is_entrepreneur = True
-        if not employment_type_extracted: # If not already set by a more specific type
-            employment_type_extracted = "emprendedor" # Default to emprendedor if keywords found
-
     # Devuelve el objeto ApplicationExtract, validado por Pydantic.
     return ApplicationExtract(
         applicant=Applicant(full_name=full_name, age_years=age),
-        employment=Employment(
-            employment_tenure_months=experience_in_months,
-            employment_type=employment_type_extracted,
-            employment_bussines=is_entrepreneur
-        ),
+        employment=Employment(employment_tenure_months=experience_in_months),
         financials=Financials(income_monthly=income, requested_amount=amount, active_credits=active_credits),
         credit=CreditProfile(has_delinquencies_last_6m=has_delinquencies_last_6m, credit_rating=rating, rejections_last_12m=rejections),
         raw_letter=letter
