@@ -23,6 +23,7 @@ class Employment(BaseModel):
     employer: Optional[str] = None
     employment_type: Optional[str] = None
     employment_tenure_months: int # La antigüedad se manejará siempre en meses.
+    employment_bussines: bool
 
 class Financials(BaseModel):
     """Modela la información financiera del solicitante."""
